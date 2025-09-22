@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>แดชบอร์ดข้อมูลครุภัณฑ์กองแผนงานและวิชาการ</title>
+    <title>ข้อมูลครุภัณฑ์คอมพิวเตอร์กองแผนงานและวิชาการ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -48,7 +48,7 @@
 
     <div class="container mx-auto p-4 md:p-6 lg:p-8">
         <header class="mb-6">
-            <h1 class="text-3xl md:text-4xl font-bold text-gray-700">แดชบอร์ดข้อมูลครุภัณฑ์กองแผนงานและวิชาการ</h1>
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-700">ข้อมูลครุภัณฑ์คอมพิวเตอร์กองแผนงานและวิชาการ</h1>
             <p class="text-lg text-gray-500">คอมพิวเตอร์ (PC) และโน้ตบุ๊ก (NB)</p>
         </header>
 
@@ -179,7 +179,7 @@
         // --- Configuration ---
         const GOOGLE_SHEET_ID = '1A4EjnKhvf0sSHJMz6-7lAUxHCY7HNRyGCi1YYoxnRGg';
         const GOOGLE_SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/export?format=csv`;
-        const currentYear = new Date().getFullYear();
+        const currentBuddhistYear = new Date().getFullYear() + 543; // Convert current Gregorian year to Buddhist year for correct calculation.
 
         // --- DOM Elements ---
         const dashboardContent = document.getElementById('dashboard-content');
@@ -216,7 +216,8 @@
                     obj[header] = (values[i] || '').trim();
                 });
                 const purchaseYear = parseInt(obj['ปีที่จัดซื้อ'], 10);
-                obj.isOld = !isNaN(purchaseYear) && (currentYear - purchaseYear > 7);
+                // Corrected logic: Compare Buddhist year with Buddhist year.
+                obj.isOld = !isNaN(purchaseYear) && (currentBuddhistYear - purchaseYear > 7);
                 return obj;
             });
 
