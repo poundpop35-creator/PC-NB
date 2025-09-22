@@ -216,8 +216,8 @@
                     obj[header] = (values[i] || '').trim();
                 });
                 const purchaseYear = parseInt(obj['ปีที่จัดซื้อ'], 10);
-                // ปรับปรุงตรรกะ: "อายุเกิน 7 ปี" หมายถึงอายุ 8 ปีขึ้นไป
-                obj.isOld = !isNaN(purchaseYear) && (currentBuddhistYear - purchaseYear >= 8);
+                // แก้ไขตรรกะ: "อายุเกิน 7 ปี" หมายถึงอายุ 7 ปีขึ้นไป (>= 7)
+                obj.isOld = !isNaN(purchaseYear) && (currentBuddhistYear - purchaseYear >= 7);
                 return obj;
             });
 
