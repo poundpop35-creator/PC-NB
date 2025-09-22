@@ -30,6 +30,18 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #555;
         }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 4px solid #3498db;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -40,27 +52,12 @@
             <p class="text-lg text-gray-500">คอมพิวเตอร์ (PC) และโน้ตบุ๊ก (NB)</p>
         </header>
 
-        <!-- Data Loader Card -->
-        <div class="bg-white p-4 md:p-6 rounded-xl shadow-md mb-6">
-            <h2 class="text-xl font-semibold mb-2 text-gray-700">โหลดข้อมูลจากไฟล์</h2>
-            <p class="text-gray-600 mb-4">
-                เลือกไฟล์ข้อมูลครุภัณฑ์ (.csv) จากเครื่องของคุณเพื่อแสดงผลในแดชบอร์ด ข้อมูลจะถูกประมวลผลในเบราว์เซอร์เท่านั้นและจะไม่ถูกส่งไปที่ไหน
-            </p>
-            <div class="flex items-center space-x-4">
-                <input type="file" id="csv-file-input" accept=".csv" class="block w-full text-sm text-gray-500
-                    file:mr-4 file:py-2 file:px-4
-                    file:rounded-lg file:border-0
-                    file:text-sm file:font-semibold
-                    file:bg-blue-50 file:text-blue-700
-                    hover:file:bg-blue-100 cursor-pointer
-                "/>
+        <!-- Loading/Status Message -->
+        <div id="status-message" class="text-center py-20 bg-white rounded-xl shadow-md">
+             <div class="flex flex-col items-center justify-center">
+                <div class="loader mb-4"></div>
+                <p id="status-text" class="text-2xl text-gray-500 font-light">กำลังโหลดข้อมูลจาก Google Sheet...</p>
             </div>
-            <p id="file-info" class="text-sm text-gray-500 mt-2 h-5"></p>
-        </div>
-
-        <!-- Initial Message -->
-        <div id="initial-message" class="text-center py-20 bg-white rounded-xl shadow-md">
-            <p class="text-2xl text-gray-500 font-light">กรุณาเลือกไฟล์ข้อมูล (.csv) เพื่อเริ่มต้น</p>
         </div>
         
         <!-- Dashboard Content -->
@@ -148,11 +145,14 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
+        // --- Configuration ---
+        const GOOGLE_SHEET_ID = '1A4EjnKhvf0sSHJMz6-7lAUxHCY7HNRyGCi1YYoxnRGg';
+        const GOOGLE_SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/export?format=csv`;
+
         // --- DOM Elements ---
-        const csvFileInput = document.getElementById('csv-file-input');
         const dashboardContent = document.getElementById('dashboard-content');
-        const initialMessage = document.getElementById('initial-message');
-        const fileInfo = document.getElementById('file-info');
+        const statusMessageDiv = document.getElementById('status-message');
+        const statusText = document.getElementById('status-text');
         
         const tableBody = document.getElementById('data-table');
         const noResultsDiv = document.getElementById('no-results');
@@ -166,20 +166,20 @@
         const pcCountEl = document.getElementById('pc-count');
         const nbCountEl = document.getElementById('nb-count');
 
-        let originalData = []; // To store the master data from the file
+        let originalData = [];
 
         // --- Core Functions ---
 
         /**
          * Parses CSV text and initializes the entire dashboard.
-         * @param {string} csvText The raw CSV data as a string.
-         * @param {string} fileName The name of the loaded file.
          */
-        function initializeDashboard(csvText, fileName) {
+        function initializeDashboard(csvText) {
             const headers = ['ลำดับ', 'จำนวน', 'ประเภท', 'ผู้รับผิดชอบ', 'AMS', 'ปีที่จัดซื้อ', 'กลุ่ม/ฝ่าย', 'หมายเหตุ'];
             
-            // Filter out empty lines before parsing
-            originalData = csvText.trim().split('\n').filter(row => row.trim() !== '').map(row => {
+            // Split rows, remove header row from Google Sheet, and filter out empty lines
+            const rows = csvText.trim().split('\n').slice(1).filter(row => row.trim() !== '');
+            
+            originalData = rows.map(row => {
                 const values = row.split(',');
                 const obj = {};
                 headers.forEach((header, i) => {
@@ -189,24 +189,30 @@
             });
 
             if (originalData.length === 0) {
-                alert("ไฟล์ที่เลือกไม่มีข้อมูลหรือไม่ใช่รูปแบบที่ถูกต้อง");
+                showStatusMessage("ไฟล์ที่เลือกไม่มีข้อมูลหรือไม่ใช่รูปแบบที่ถูกต้อง", true);
                 return;
             }
 
+            statusMessageDiv.classList.add('hidden');
             dashboardContent.classList.remove('hidden');
-            initialMessage.classList.add('hidden');
 
-            if (fileName) {
-               fileInfo.textContent = `ไฟล์ที่โหลด: ${fileName} | พบข้อมูล ${originalData.length} รายการ`;
-            }
-
-            // Reset filters to default before populating to avoid duplicates
             ownerFilter.innerHTML = '<option value="">ทั้งหมด</option>';
             yearFilter.innerHTML = '<option value="">ทั้งหมด</option>';
             departmentFilter.innerHTML = '<option value="">ทั้งหมด</option>';
 
             populateFilters();
             applyFilters();
+        }
+        
+        function showStatusMessage(message, isError = false) {
+            statusMessageDiv.classList.remove('hidden');
+            statusMessageDiv.querySelector('.loader').style.display = isError ? 'none' : 'block';
+            statusText.textContent = message;
+            if(isError) {
+                statusText.classList.add('text-red-500');
+            } else {
+                statusText.classList.remove('text-red-500');
+            }
         }
 
         function populateFilters() {
@@ -279,38 +285,25 @@
             applyFilters();
         }
 
-        /**
-         * Handles the file selection event.
-         * @param {Event} event The file input change event.
-         */
-        function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const text = e.target.result;
-                sessionStorage.setItem('inventoryData', text);
-                sessionStorage.setItem('inventoryFileName', file.name);
-                initializeDashboard(text, file.name);
-            };
-            reader.onerror = () => {
-                alert('เกิดข้อผิดพลาดในการอ่านไฟล์');
-                fileInfo.textContent = 'ไม่สามารถอ่านไฟล์ได้';
-            };
-            reader.readAsText(file, 'UTF-8');
+        async function loadDataFromSheet() {
+            try {
+                const response = await fetch(GOOGLE_SHEET_CSV_URL);
+                if (!response.ok) {
+                    throw new Error(`Network response was not ok, status: ${response.status}`);
+                }
+                const csvText = await response.text();
+                initializeDashboard(csvText);
+            } catch (error) {
+                console.error("Failed to fetch data from Google Sheet:", error);
+                const errorMessage = "ไม่สามารถโหลดข้อมูลได้ โปรดตรวจสอบว่า Google Sheet ได้รับการเผยแพร่และแชร์เป็น 'ทุกคนที่มีลิงก์' แล้ว";
+                showStatusMessage(errorMessage, true);
+                dashboardContent.classList.add('hidden');
+            }
         }
-
+        
         // --- Event Listeners & Initialization ---
-
-        // Check for session data on page load for persistence
-        const storedData = sessionStorage.getItem('inventoryData');
-        const storedFileName = sessionStorage.getItem('inventoryFileName');
-        if (storedData) {
-            initializeDashboard(storedData, storedFileName);
-        }
-
-        csvFileInput.addEventListener('change', handleFileSelect);
+        loadDataFromSheet();
+        
         searchAmsInput.addEventListener('input', applyFilters);
         ownerFilter.addEventListener('change', applyFilters);
         yearFilter.addEventListener('change', applyFilters);
