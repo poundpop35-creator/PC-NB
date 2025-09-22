@@ -179,7 +179,7 @@
         // --- Configuration ---
         const GOOGLE_SHEET_ID = '1A4EjnKhvf0sSHJMz6-7lAUxHCY7HNRyGCi1YYoxnRGg';
         const GOOGLE_SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/export?format=csv`;
-        const currentBuddhistYear = new Date().getFullYear() + 543; // Convert current Gregorian year to Buddhist year for correct calculation.
+        const currentBuddhistYear = new Date().getFullYear() + 543; // ดึงปี พ.ศ. ปัจจุบันอัตโนมัติ
 
         // --- DOM Elements ---
         const dashboardContent = document.getElementById('dashboard-content');
@@ -216,8 +216,8 @@
                     obj[header] = (values[i] || '').trim();
                 });
                 const purchaseYear = parseInt(obj['ปีที่จัดซื้อ'], 10);
-                // Corrected logic: Compare Buddhist year with Buddhist year.
-                obj.isOld = !isNaN(purchaseYear) && (currentBuddhistYear - purchaseYear > 7);
+                // ปรับปรุงตรรกะ: "อายุเกิน 7 ปี" หมายถึงอายุ 8 ปีขึ้นไป
+                obj.isOld = !isNaN(purchaseYear) && (currentBuddhistYear - purchaseYear >= 8);
                 return obj;
             });
 
