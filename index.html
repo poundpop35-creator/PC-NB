@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ข้อมูลครุภัณฑ์กองแผนงานและวิชาการ</title>
+    <title>แดชบอร์ดข้อมูลครุภัณฑ์กองแผนงานและวิชาการ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -63,7 +63,7 @@
         <!-- Dashboard Content -->
         <div id="dashboard-content" class="hidden">
             <!-- Summary Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between">
                     <div>
                         <p class="text-gray-500 text-sm">จำนวนทั้งหมด</p>
@@ -95,6 +95,17 @@
                         </svg>
                     </div>
                 </div>
+                <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">อายุเกิน 7 ปี</p>
+                        <p id="old-count" class="text-3xl font-bold text-red-600">0</p>
+                    </div>
+                     <div class="bg-red-100 p-3 rounded-full">
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                </div>
             </div>
 
             <!-- Filters and Search -->
@@ -117,14 +128,24 @@
                         <select id="filter-department" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"><option value="">ทั้งหมด</option></select>
                     </div>
                 </div>
-                <div class="mt-4 flex justify-end space-x-2">
-                    <button id="export-csv" class="flex items-center px-4 py-2 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                        Export เป็น CSV
-                    </button>
-                    <button id="reset-filters" class="px-4 py-2 bg-gray-600 text-white font-semibold rounded-lg shadow-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75">ล้างค่าทั้งหมด</button>
+                <div class="mt-4 flex flex-wrap items-center justify-between">
+                    <div class="relative flex items-start">
+                        <div class="flex items-center h-5">
+                            <input id="filter-old-assets" type="checkbox" class="focus:ring-red-500 h-4 w-4 text-red-600 border-gray-300 rounded">
+                        </div>
+                        <div class="ml-3 text-sm">
+                            <label for="filter-old-assets" class="font-medium text-gray-700">แสดงเฉพาะครุภัณฑ์อายุเกิน 7 ปี</label>
+                        </div>
+                    </div>
+                    <div class="flex space-x-2 mt-2 sm:mt-0">
+                        <button id="export-csv" class="flex items-center px-4 py-2 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            Export เป็น CSV
+                        </button>
+                        <button id="reset-filters" class="px-4 py-2 bg-gray-600 text-white font-semibold rounded-lg shadow-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75">ล้างค่าทั้งหมด</button>
+                    </div>
                 </div>
             </div>
 
@@ -158,6 +179,7 @@
         // --- Configuration ---
         const GOOGLE_SHEET_ID = '1A4EjnKhvf0sSHJMz6-7lAUxHCY7HNRyGCi1YYoxnRGg';
         const GOOGLE_SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/export?format=csv`;
+        const currentYear = new Date().getFullYear();
 
         // --- DOM Elements ---
         const dashboardContent = document.getElementById('dashboard-content');
@@ -170,12 +192,14 @@
         const ownerFilter = document.getElementById('filter-owner');
         const yearFilter = document.getElementById('filter-year');
         const departmentFilter = document.getElementById('filter-department');
+        const oldAssetsFilter = document.getElementById('filter-old-assets');
         const resetBtn = document.getElementById('reset-filters');
         const exportBtn = document.getElementById('export-csv');
         
         const totalCountEl = document.getElementById('total-count');
         const pcCountEl = document.getElementById('pc-count');
         const nbCountEl = document.getElementById('nb-count');
+        const oldCountEl = document.getElementById('old-count');
 
         let originalData = [];
         let currentFilteredData = [];
@@ -191,6 +215,8 @@
                 headers.forEach((header, i) => {
                     obj[header] = (values[i] || '').trim();
                 });
+                const purchaseYear = parseInt(obj['ปีที่จัดซื้อ'], 10);
+                obj.isOld = !isNaN(purchaseYear) && (currentYear - purchaseYear > 7);
                 return obj;
             });
 
@@ -263,6 +289,7 @@
             totalCountEl.textContent = data.length;
             pcCountEl.textContent = data.filter(item => item['ประเภท'] === 'PC').length;
             nbCountEl.textContent = data.filter(item => item['ประเภท'] === 'NB').length;
+            oldCountEl.textContent = data.filter(item => item.isOld).length;
         }
 
         function applyFilters() {
@@ -270,13 +297,15 @@
             const selectedOwner = ownerFilter.value;
             const selectedYear = yearFilter.value;
             const selectedDepartment = departmentFilter.value;
+            const showOnlyOld = oldAssetsFilter.checked;
 
             const filteredData = originalData.filter(item => {
                 const amsMatch = item['AMS'].toLowerCase().includes(amsQuery);
                 const ownerMatch = !selectedOwner || item['ผู้รับผิดชอบ'] === selectedOwner;
                 const yearMatch = !selectedYear || item['ปีที่จัดซื้อ'] === selectedYear;
                 const departmentMatch = !selectedDepartment || item['กลุ่ม/ฝ่าย'] === selectedDepartment;
-                return amsMatch && ownerMatch && yearMatch && departmentMatch;
+                const oldMatch = !showOnlyOld || item.isOld;
+                return amsMatch && ownerMatch && yearMatch && departmentMatch && oldMatch;
             });
             
             currentFilteredData = filteredData;
@@ -289,6 +318,7 @@
             ownerFilter.value = '';
             yearFilter.value = '';
             departmentFilter.value = '';
+            oldAssetsFilter.checked = false;
             applyFilters();
         }
         
@@ -353,6 +383,7 @@
         ownerFilter.addEventListener('change', applyFilters);
         yearFilter.addEventListener('change', applyFilters);
         departmentFilter.addEventListener('change', applyFilters);
+        oldAssetsFilter.addEventListener('change', applyFilters);
         resetBtn.addEventListener('click', resetAll);
         exportBtn.addEventListener('click', exportToCSV);
     });
