@@ -43,25 +43,21 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        .toast-container {
+        .toast-message {
             position: fixed;
             top: 1rem;
             right: 1rem;
-            z-index: 50;
+            background-color: #4CAF50;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: opacity 0.5s ease-in-out;
+            opacity: 0;
+            z-index: 1000;
         }
-        .fade-in {
-            animation: fadeIn 0.5s ease-in-out forwards;
-        }
-        .fade-out {
-            animation: fadeOut 0.5s ease-in-out forwards;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes fadeOut {
-            from { opacity: 1; transform: translateY(0); }
-            to { opacity: 0; transform: translateY(-20px); }
+        .toast-error {
+            background-color: #f44336;
         }
     </style>
 </head>
@@ -80,78 +76,68 @@
                 <p id="status-text" class="text-2xl text-gray-500 font-light">กำลังโหลดข้อมูลจาก Google Sheet...</p>
             </div>
         </div>
-        
+
         <!-- Dashboard Content -->
         <div id="dashboard-content" class="hidden">
-            <!-- Summary Cards and Chart -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-                <!-- Total Count Card -->
-                <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-500 text-sm">ทั้งหมด</p>
-                        <p id="total-count" class="text-3xl font-bold text-blue-600">0</p>
+            <!-- Summary Cards and Pie Chart -->
+            <div class="bg-white p-6 rounded-xl shadow-md mb-6 flex flex-col lg:flex-row items-center justify-between gap-6">
+                <!-- Summary Cards Container -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full lg:w-3/4">
+                    <div class="bg-white p-4 rounded-xl shadow-md flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">ทั้งหมด</p>
+                            <p id="total-count" class="text-3xl font-bold text-blue-600">0</p>
+                        </div>
+                        <div class="bg-blue-100 p-2 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                        </div>
                     </div>
-                    <div class="bg-blue-100 p-3 rounded-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                    <div class="bg-white p-4 rounded-xl shadow-md flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">PC</p>
+                            <p id="pc-count" class="text-3xl font-bold text-green-600">0</p>
+                        </div>
+                        <div class="bg-green-100 p-2 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                        </div>
                     </div>
-                </div>
-                <!-- PC Count Card -->
-                <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-500 text-sm">PC</p>
-                        <p id="pc-count" class="text-3xl font-bold text-green-600">0</p>
+                    <div class="bg-white p-4 rounded-xl shadow-md flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Notebook</p>
+                            <p id="nb-count" class="text-3xl font-bold text-purple-600">0</p>
+                        </div>
+                        <div class="bg-purple-100 p-2 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 0 1-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0 1 15 18.257V17.25m6-12V15a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 15V5.25A2.25 2.25 0 0 1 5.25 3h13.5A2.25 2.25 0 0 1 21 5.25Z" />
+                            </svg>
+                        </div>
                     </div>
-                    <div class="bg-green-100 p-3 rounded-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                    </div>
-                </div>
-                <!-- Notebook Count Card -->
-                <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-500 text-sm">Notebook</p>
-                        <p id="nb-count" class="text-3xl font-bold text-purple-600">0</p>
-                    </div>
-                    <div class="bg-purple-100 p-3 rounded-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                           <path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 0 1-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0 1 15 18.257V17.25m6-12V15a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 15V5.25A2.25 2.25 0 0 1 5.25 3h13.5A2.25 2.25 0 0 1 21 5.25Z" />
-                        </svg>
-                    </div>
-                </div>
-                <!-- Old Assets Count Card -->
-                <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-500 text-sm">อายุเกิน 7 ปี</p>
-                        <p id="old-count" class="text-3xl font-bold text-red-600">0</p>
-                    </div>
-                    <div class="bg-red-100 p-3 rounded-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                </div>
-                <!-- Library Assets Count Card -->
-                <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-500 text-sm">ห้องสมุด</p>
-                        <p id="library-count" class="text-3xl font-bold text-indigo-600">0</p>
-                    </div>
-                    <div class="bg-indigo-100 p-3 rounded-full">
-                        <!-- Corrected SVG for a book icon -->
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-8 w-8 text-indigo-600">
-                           <path fill-rule="evenodd" d="M3.25 3A2.25 2.25 0 001 5.25v13.5C1 19.985 2.015 21 3.25 21h13.5c1.235 0 2.25-1.015 2.25-2.25V5.25A2.25 2.25 0 0016.75 3H3.25zM2.5 5.25a.75.75 0 01.75-.75h13.5a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H3.25a.75.75 0 01-.75-.75V5.25zM15 12a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
-                        </svg>
+                    <div class="bg-white p-4 rounded-xl shadow-md flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">ห้องสมุด</p>
+                            <p id="library-count" class="text-3xl font-bold text-yellow-600">0</p>
+                        </div>
+                        <div class="bg-yellow-100 p-2 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-yellow-600" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M14 2H6a2 2 0 00-2 2v16c0 1.11.89 2 2 2h12c1.11 0 2-.89 2-2V8l-6-6zm-2 18a2 2 0 110-4 2 2 0 010 4zM12 9V5.5L16.5 10H13a1 1 0 01-1-1z" />
+                            </svg>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Pie Chart for Age Proportion -->
-            <div class="bg-white p-4 md:p-6 rounded-xl shadow-md mb-6">
-                <h2 class="text-xl md:text-2xl font-bold text-gray-700 mb-4">สัดส่วนครุภัณฑ์ตามอายุการใช้งาน</h2>
-                <div class="flex justify-center">
-                   <!-- ใช้หน่วยเป็นพิกเซลเพื่อกำหนดขนาดที่แน่นอน -->
-                   <canvas id="age-chart" width="300" height="300"></canvas>
+                <!-- Pie Chart Container -->
+                <div class="flex-shrink-0 mt-6 lg:mt-0 lg:ml-6 flex items-center justify-center">
+                    <div class="relative w-48 h-48">
+                        <canvas id="age-chart" class="w-[300px] h-[300px]"></canvas>
+                        <div class="absolute inset-0 flex items-center justify-center text-center">
+                            <div>
+                                <p class="text-sm text-gray-500">อายุเกิน 7 ปี</p>
+                                <p id="old-count" class="text-2xl font-bold text-red-600">0</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -189,21 +175,15 @@
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                             </svg>
-                            Export เป็น CSV
+                            Export CSV
                         </button>
                         <button id="reset-filters" class="px-4 py-2 bg-gray-600 text-white font-semibold rounded-lg shadow-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75">ล้างค่าทั้งหมด</button>
-                        <a href="https://docs.google.com/spreadsheets/d/1A4EjnKhvf0sSHJMz6-7lAUxHCY7HNRyGCi1YYoxnRGg/edit#gid=0" target="_blank" class="flex items-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                            แก้ไข Google Sheet
-                        </a>
                     </div>
                 </div>
             </div>
 
             <!-- Data Table -->
-            <div id="table-container" class="bg-white rounded-xl shadow-md overflow-hidden">
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
                 <div class="table-responsive">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -227,11 +207,9 @@
         </div>
     </div>
 
-    <!-- Notification Toast -->
-    <div id="toast-notification" class="toast-container hidden">
-        <div class="bg-gray-800 text-white px-6 py-3 rounded-xl shadow-xl">
-            <p id="toast-message"></p>
-        </div>
+    <!-- Toast Message -->
+    <div id="toast" class="toast-message hidden">
+        <p id="toast-text"></p>
     </div>
 
     <script>
@@ -239,15 +217,13 @@
         // --- Configuration ---
         const GOOGLE_SHEET_ID = '1A4EjnKhvf0sSHJMz6-7lAUxHCY7HNRyGCi1YYoxnRGg';
         const GOOGLE_SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/export?format=csv`;
-        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw2E8T6XKAO1dIDa0GRBEAzBYOWUxsSmgE4vNQohRoex86XI16O-MUTMf7_jAF8fxI/exec';
-        const currentBuddhistYear = new Date().getFullYear() + 543;
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwJnzChT7_4dXeCj54emkE6O_H9iW4d6nY_PZI69rn2o8kNRak-b64KiBom5kaOAqs/exec';
+        const currentBuddhistYear = new Date().getFullYear() + 543; // Auto-detect current year
 
         // --- DOM Elements ---
         const dashboardContent = document.getElementById('dashboard-content');
         const statusMessageDiv = document.getElementById('status-message');
         const statusText = document.getElementById('status-text');
-        
-        const tableContainer = document.getElementById('table-container');
         const tableBody = document.getElementById('data-table');
         const noResultsDiv = document.getElementById('no-results');
         const searchAmsInput = document.getElementById('search-ams');
@@ -257,78 +233,25 @@
         const oldAssetsFilter = document.getElementById('filter-old-assets');
         const resetBtn = document.getElementById('reset-filters');
         const exportBtn = document.getElementById('export-csv');
-        
         const totalCountEl = document.getElementById('total-count');
         const pcCountEl = document.getElementById('pc-count');
         const nbCountEl = document.getElementById('nb-count');
         const oldCountEl = document.getElementById('old-count');
         const libraryCountEl = document.getElementById('library-count');
-        const toastNotification = document.getElementById('toast-notification');
-        const toastMessage = document.getElementById('toast-message');
-
-        const chartCanvas = document.getElementById('age-chart');
-        let ageChart = null; // Variable to hold the Chart.js instance
+        const ageChartCtx = document.getElementById('age-chart').getContext('2d');
+        const toast = document.getElementById('toast');
+        const toastText = document.getElementById('toast-text');
 
         let originalData = [];
         let currentFilteredData = [];
+        let ageChart;
 
         // --- Core Functions ---
-        function showNotification(message, duration = 3000) {
-            toastMessage.textContent = message;
-            toastNotification.classList.remove('hidden', 'fade-out');
-            toastNotification.classList.add('fade-in');
-
-            setTimeout(() => {
-                toastNotification.classList.remove('fade-in');
-                toastNotification.classList.add('fade-out');
-            }, duration);
-
-            setTimeout(() => {
-                toastNotification.classList.add('hidden');
-            }, duration + 500);
-        }
-
-        async function updateGoogleSheet(amsNumber, newOwner) {
-            if (APPS_SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL' || !APPS_SCRIPT_URL) {
-                showNotification("กรุณาตั้งค่า URL ของ Google Apps Script ก่อน", 5000);
-                return;
-            }
-
-            showNotification("กำลังบันทึกข้อมูล...", 10000);
-
-            try {
-                const response = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'cors',
-                    cache: 'no-cache',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ ams: amsNumber, owner: newOwner }),
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const result = await response.json();
-                if (result.status === 'success') {
-                    showNotification("บันทึกข้อมูลสำเร็จ!");
-                    // Refresh data from Google Sheet to ensure consistency
-                    await loadDataFromSheet();
-                } else {
-                    showNotification(`ข้อผิดพลาด: ${result.message || 'ไม่สามารถบันทึกข้อมูลได้'}`);
-                }
-            } catch (e) {
-                console.error("Failed to update Google Sheet:", e);
-                showNotification("เกิดข้อผิดพลาดในการเชื่อมต่อ: ไม่สามารถบันทึกข้อมูลได้");
-            }
-        }
 
         function initializeDashboard(csvText) {
             const headers = ['ลำดับ', 'จำนวน', 'ประเภท', 'ผู้รับผิดชอบ', 'AMS', 'ปีที่จัดซื้อ', 'กลุ่ม/ฝ่าย', 'หมายเหตุ'];
             const rows = csvText.trim().split('\n').slice(1).filter(row => row.trim() !== '');
-            
+
             originalData = rows.map(row => {
                 const values = row.split(',');
                 const obj = {};
@@ -337,6 +260,7 @@
                 });
                 const purchaseYear = parseInt(obj['ปีที่จัดซื้อ'], 10);
                 obj.isOld = !isNaN(purchaseYear) && (currentBuddhistYear - purchaseYear >= 7);
+                obj.isLibrary = obj['หมายเหตุ'] && obj['หมายเหตุ'].includes('ห้องสมุด');
                 return obj;
             });
 
@@ -348,29 +272,45 @@
             statusMessageDiv.classList.add('hidden');
             dashboardContent.classList.remove('hidden');
 
+            // Populate filters
             ownerFilter.innerHTML = '<option value="">ทั้งหมด</option>';
             yearFilter.innerHTML = '<option value="">ทั้งหมด</option>';
             departmentFilter.innerHTML = '<option value="">ทั้งหมด</option>';
-
             populateFilters();
+            
+            // Initial filter and render
             applyFilters();
         }
-        
+
         function showStatusMessage(message, isError = false) {
             statusMessageDiv.classList.remove('hidden');
             statusMessageDiv.querySelector('.loader').style.display = isError ? 'none' : 'block';
             statusText.textContent = message;
-            if(isError) {
+            if (isError) {
                 statusText.classList.add('text-red-500');
             } else {
                 statusText.classList.remove('text-red-500');
             }
         }
+        
+        function showToast(message, isError = false) {
+            toastText.textContent = message;
+            toast.classList.remove('hidden', 'toast-error');
+            if (isError) {
+                toast.classList.add('toast-error');
+            }
+            toast.style.opacity = 1;
+
+            setTimeout(() => {
+                toast.style.opacity = 0;
+                setTimeout(() => toast.classList.add('hidden'), 500);
+            }, 3000);
+        }
 
         function populateFilters() {
-            const owners = [...new Set(originalData.map(item => item['ผู้รับผิดชอบ']))].sort();
-            const years = [...new Set(originalData.map(item => item['ปีที่จัดซื้อ']))].sort((a,b) => b-a);
-            const departments = [...new Set(originalData.map(item => item['กลุ่ม/ฝ่าย']))].sort();
+            const owners = [...new Set(originalData.map(item => item['ผู้รับผิดชอบ']))].filter(Boolean).sort();
+            const years = [...new Set(originalData.map(item => item['ปีที่จัดซื้อ']))].filter(Boolean).sort((a,b) => b-a);
+            const departments = [...new Set(originalData.map(item => item['กลุ่ม/ฝ่าย']))].filter(Boolean).sort();
 
             owners.forEach(owner => ownerFilter.add(new Option(owner, owner)));
             years.forEach(year => yearFilter.add(new Option(year, year)));
@@ -381,51 +321,28 @@
             tableBody.innerHTML = '';
             const dataToShow = data.length > 0;
 
-            tableContainer.classList.toggle('hidden', !dataToShow);
             noResultsDiv.classList.toggle('hidden', dataToShow);
+            if (tableBody.closest('.bg-white')) {
+                tableBody.closest('.bg-white').classList.toggle('hidden', !dataToShow);
+            }
             
             if (dataToShow) {
                 data.forEach(item => {
                     const row = tableBody.insertRow();
                     row.className = 'hover:bg-gray-50';
-                    const ownerCell = `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 editable-cell" contenteditable="true" data-ams="${item['AMS']}">${item['ผู้รับผิดชอบ']}</td>`;
                     row.innerHTML = `
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item['ลำดับ']}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                           <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${item['ประเภท'] === 'PC' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'}">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${item['ประเภท'] === 'PC' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'}">
                                 ${item['ประเภท']}
-                           </span>
+                            </span>
                         </td>
-                        ${ownerCell}
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 editable-owner" data-ams="${item['AMS']}">${item['ผู้รับผิดชอบ']}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item['AMS']}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item['ปีที่จัดซื้อ']}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item['กลุ่ม/ฝ่าย']}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item['หมายเหตุ']}</td>
                     `;
-                });
-
-                // Add event listeners for editing
-                document.querySelectorAll('.editable-cell').forEach(cell => {
-                    let originalValue = cell.textContent;
-                    
-                    cell.addEventListener('focus', () => {
-                        originalValue = cell.textContent;
-                    });
-                    
-                    cell.addEventListener('blur', () => {
-                        const amsNumber = cell.dataset.ams;
-                        const newValue = cell.textContent.trim();
-                        if (newValue !== originalValue) {
-                            updateGoogleSheet(amsNumber, newValue);
-                        }
-                    });
-
-                    cell.addEventListener('keydown', (e) => {
-                        if (e.key === 'Enter') {
-                            e.preventDefault();
-                            cell.blur(); // Trigger blur to save changes
-                        }
-                    });
                 });
             }
         }
@@ -434,60 +351,56 @@
             totalCountEl.textContent = data.length;
             pcCountEl.textContent = data.filter(item => item['ประเภท'] === 'PC').length;
             nbCountEl.textContent = data.filter(item => item['ประเภท'] === 'NB').length;
-            oldCountEl.textContent = data.filter(item => item.isOld).length;
-            libraryCountEl.textContent = data.filter(item => item['หมายเหตุ'].includes('ห้องสมุด')).length;
+            const oldItems = data.filter(item => item.isOld);
+            oldCountEl.textContent = oldItems.length;
+            libraryCountEl.textContent = data.filter(item => item.isLibrary).length;
+            
+            const totalCount = data.length;
+            const notOldCount = totalCount - oldItems.length;
+            
+            updatePieChart(oldItems.length, notOldCount);
         }
 
-        // Function to update or create the pie chart
-        function updateChart(data) {
-            const oldAssets = data.filter(item => item.isOld).length;
-            const newAssets = data.length - oldAssets;
+        function updatePieChart(oldCount, notOldCount) {
+            if (ageChart) {
+                ageChart.destroy();
+            }
 
-            const chartData = {
-                labels: ['อายุเกิน 7 ปี', 'อายุไม่เกิน 7 ปี'],
-                datasets: [{
-                    data: [oldAssets, newAssets],
-                    backgroundColor: ['#dc2626', '#10b981'],
-                    hoverOffset: 4
-                }]
-            };
-
-            const chartConfig = {
-                type: 'pie',
-                data: chartData,
+            ageChart = new Chart(ageChartCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['อายุเกิน 7 ปี', 'ไม่เกิน 7 ปี'],
+                    datasets: [{
+                        data: [oldCount, notOldCount],
+                        backgroundColor: ['#f87171', '#3498db'],
+                        borderWidth: 0,
+                    }]
+                },
                 options: {
-                    responsive: false, // ปิด responsive เพื่อให้ขนาดคงที่ตามที่กำหนด
-                    maintainAspectRatio: false, // ปิดการรักษาสัดส่วน
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '80%',
                     plugins: {
                         legend: {
-                            position: 'bottom',
-                            labels: {
-                                font: {
-                                    family: 'Sarabun',
-                                    size: 14
-                                }
-                            }
+                            display: false,
                         },
                         tooltip: {
                             callbacks: {
-                                label: function(tooltipItem) {
-                                    const value = tooltipItem.raw;
-                                    const total = tooltipItem.dataset.data.reduce((sum, current) => sum + current, 0);
-                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                                    return `${tooltipItem.label}: ${value} (${percentage}%)`;
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += `${context.parsed}`;
+                                    }
+                                    return label;
                                 }
                             }
                         }
                     }
                 }
-            };
-            
-            if (ageChart) {
-                ageChart.data.datasets[0].data = [oldAssets, newAssets];
-                ageChart.update();
-            } else {
-                ageChart = new Chart(chartCanvas, chartConfig);
-            }
+            });
         }
 
         function applyFilters() {
@@ -509,7 +422,6 @@
             currentFilteredData = filteredData;
             renderTable(filteredData);
             updateSummary(filteredData);
-            updateChart(filteredData);
         }
 
         function resetAll() {
@@ -521,9 +433,35 @@
             applyFilters();
         }
         
+        async function updateGoogleSheet(ams, newOwner) {
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ams: ams, owner: newOwner }),
+                    mode: 'no-cors' // Use no-cors to avoid CORS issues with Apps Script
+                });
+                
+                // Due to 'no-cors', we can't read the response. We assume success if the fetch completes.
+                // The Apps Script itself handles success/failure internally.
+                showToast("ข้อมูลได้รับการบันทึกแล้ว");
+                
+                // Update local data to reflect the change
+                const itemToUpdate = originalData.find(item => item['AMS'] === ams);
+                if (itemToUpdate) {
+                    itemToUpdate['ผู้รับผิดชอบ'] = newOwner;
+                    applyFilters(); // Re-render table with updated data
+                }
+
+            } catch (error) {
+                console.error("Failed to update Google Sheet:", error);
+                showToast("เกิดข้อผิดพลาดในการเชื่อมต่อ: ไม่สามารถบันทึกข้อมูลได้", true);
+            }
+        }
+        
         function exportToCSV() {
             if (currentFilteredData.length === 0) {
-                showNotification("ไม่มีข้อมูลให้ export");
+                showToast("ไม่มีข้อมูลให้ Export", true);
                 return;
             }
 
@@ -549,7 +487,7 @@
                 const url = URL.createObjectURL(blob);
                 link.setAttribute('href', url);
                 const today = new Date();
-                const dateString = today.toISOString().split('T')[0];
+                const dateString = today.toISOString().split('T')[0]; // YYYY-MM-DD
                 link.setAttribute('download', `inventory-export-${dateString}.csv`);
                 link.style.visibility = 'hidden';
                 document.body.appendChild(link);
@@ -585,6 +523,41 @@
         oldAssetsFilter.addEventListener('change', applyFilters);
         resetBtn.addEventListener('click', resetAll);
         exportBtn.addEventListener('click', exportToCSV);
+        
+        tableBody.addEventListener('dblclick', (event) => {
+            const target = event.target;
+            if (target.classList.contains('editable-owner')) {
+                const ams = target.dataset.ams;
+                const originalText = target.textContent.trim();
+                
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = originalText;
+                input.className = 'w-full p-1 border border-blue-500 rounded';
+                
+                target.textContent = '';
+                target.appendChild(input);
+                input.focus();
+                
+                const saveChange = () => {
+                    const newOwner = input.value.trim();
+                    if (newOwner !== originalText) {
+                        updateGoogleSheet(ams, newOwner);
+                    } else {
+                        target.textContent = originalText;
+                    }
+                };
+                
+                input.addEventListener('blur', saveChange);
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        saveChange();
+                        input.blur();
+                    }
+                });
+            }
+        });
+
     });
     </script>
 </body>
