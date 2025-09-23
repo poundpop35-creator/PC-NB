@@ -239,6 +239,7 @@
         // --- Configuration ---
         const GOOGLE_SHEET_ID = '1A4EjnKhvf0sSHJMz6-7lAUxHCY7HNRyGCi1YYoxnRGg';
         const GOOGLE_SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/export?format=csv`;
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxk9bYfrU3z1L7Y1ftGtjKOOKOudQFtNzZR9Yq91T0pyNXsRizXwwJH9CFQcc8n4mc/exec';
         const currentBuddhistYear = new Date().getFullYear() + 543;
 
         // --- DOM Elements ---
@@ -285,6 +286,43 @@
             setTimeout(() => {
                 toastNotification.classList.add('hidden');
             }, duration + 500);
+        }
+
+        async function updateGoogleSheet(amsNumber, newOwner) {
+            if (APPS_SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL' || !APPS_SCRIPT_URL) {
+                showNotification("กรุณาตั้งค่า URL ของ Google Apps Script ก่อน", 5000);
+                return;
+            }
+
+            showNotification("กำลังบันทึกข้อมูล...", 10000);
+
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    cache: 'no-cache',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ ams: amsNumber, owner: newOwner }),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    showNotification("บันทึกข้อมูลสำเร็จ!");
+                    // Refresh data from Google Sheet to ensure consistency
+                    await loadDataFromSheet();
+                } else {
+                    showNotification(`ข้อผิดพลาด: ${result.message || 'ไม่สามารถบันทึกข้อมูลได้'}`);
+                }
+            } catch (e) {
+                console.error("Failed to update Google Sheet:", e);
+                showNotification("เกิดข้อผิดพลาดในการเชื่อมต่อ: ไม่สามารถบันทึกข้อมูลได้");
+            }
         }
 
         function initializeDashboard(csvText) {
@@ -350,6 +388,7 @@
                 data.forEach(item => {
                     const row = tableBody.insertRow();
                     row.className = 'hover:bg-gray-50';
+                    const ownerCell = `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 editable-cell" contenteditable="true" data-ams="${item['AMS']}">${item['ผู้รับผิดชอบ']}</td>`;
                     row.innerHTML = `
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item['ลำดับ']}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -357,12 +396,36 @@
                                 ${item['ประเภท']}
                            </span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${item['ผู้รับผิดชอบ']}</td>
+                        ${ownerCell}
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item['AMS']}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item['ปีที่จัดซื้อ']}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item['กลุ่ม/ฝ่าย']}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item['หมายเหตุ']}</td>
                     `;
+                });
+
+                // Add event listeners for editing
+                document.querySelectorAll('.editable-cell').forEach(cell => {
+                    let originalValue = cell.textContent;
+                    
+                    cell.addEventListener('focus', () => {
+                        originalValue = cell.textContent;
+                    });
+                    
+                    cell.addEventListener('blur', () => {
+                        const amsNumber = cell.dataset.ams;
+                        const newValue = cell.textContent.trim();
+                        if (newValue !== originalValue) {
+                            updateGoogleSheet(amsNumber, newValue);
+                        }
+                    });
+
+                    cell.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            cell.blur(); // Trigger blur to save changes
+                        }
+                    });
                 });
             }
         }
