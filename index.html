@@ -6,6 +6,7 @@
     <title>ข้อมูลครุภัณฑ์คอมพิวเตอร์กองแผนงานและวิชาการ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: 'Sarabun', sans-serif;
@@ -82,7 +83,7 @@
         
         <!-- Dashboard Content -->
         <div id="dashboard-content" class="hidden">
-            <!-- Summary Cards -->
+            <!-- Summary Cards and Chart -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
                 <!-- Total Count Card -->
                 <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between">
@@ -130,7 +131,7 @@
                         </svg>
                     </div>
                 </div>
-                <!-- Updated: Library Assets Count Card -->
+                <!-- Library Assets Count Card -->
                 <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between">
                     <div>
                         <p class="text-gray-500 text-sm">ห้องสมุด</p>
@@ -139,9 +140,18 @@
                     <div class="bg-indigo-100 p-3 rounded-full">
                         <!-- Corrected SVG for a book icon -->
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-8 w-8 text-indigo-600">
-                          <path fill-rule="evenodd" d="M3.25 3A2.25 2.25 0 001 5.25v13.5C1 19.985 2.015 21 3.25 21h13.5c1.235 0 2.25-1.015 2.25-2.25V5.25A2.25 2.25 0 0016.75 3H3.25zM2.5 5.25a.75.75 0 01.75-.75h13.5a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H3.25a.75.75 0 01-.75-.75V5.25zM15 12a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                           <path fill-rule="evenodd" d="M3.25 3A2.25 2.25 0 001 5.25v13.5C1 19.985 2.015 21 3.25 21h13.5c1.235 0 2.25-1.015 2.25-2.25V5.25A2.25 2.25 0 0016.75 3H3.25zM2.5 5.25a.75.75 0 01.75-.75h13.5a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H3.25a.75.75 0 01-.75-.75V5.25zM15 12a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
                         </svg>
                     </div>
+                </div>
+            </div>
+
+            <!-- Pie Chart for Age Proportion -->
+            <div class="bg-white p-4 md:p-6 rounded-xl shadow-md mb-6">
+                <h2 class="text-xl md:text-2xl font-bold text-gray-700 mb-4">สัดส่วนครุภัณฑ์ตามอายุการใช้งาน</h2>
+                <div class="flex justify-center">
+                   <!-- ใช้หน่วยเป็นพิกเซลเพื่อกำหนดขนาดที่แน่นอน -->
+                   <canvas id="age-chart" width="300" height="300"></canvas>
                 </div>
             </div>
 
@@ -182,6 +192,12 @@
                             Export เป็น CSV
                         </button>
                         <button id="reset-filters" class="px-4 py-2 bg-gray-600 text-white font-semibold rounded-lg shadow-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75">ล้างค่าทั้งหมด</button>
+                        <a href="https://docs.google.com/spreadsheets/d/1A4EjnKhvf0sSHJMz6-7lAUxHCY7HNRyGCi1YYoxnRGg/edit#gid=0" target="_blank" class="flex items-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                            แก้ไข Google Sheet
+                        </a>
                     </div>
                 </div>
             </div>
@@ -223,7 +239,7 @@
         // --- Configuration ---
         const GOOGLE_SHEET_ID = '1A4EjnKhvf0sSHJMz6-7lAUxHCY7HNRyGCi1YYoxnRGg';
         const GOOGLE_SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/export?format=csv`;
-        const currentBuddhistYear = new Date().getFullYear() + 543; // Automatically get current Buddhist year
+        const currentBuddhistYear = new Date().getFullYear() + 543;
 
         // --- DOM Elements ---
         const dashboardContent = document.getElementById('dashboard-content');
@@ -245,15 +261,17 @@
         const pcCountEl = document.getElementById('pc-count');
         const nbCountEl = document.getElementById('nb-count');
         const oldCountEl = document.getElementById('old-count');
-        const libraryCountEl = document.getElementById('library-count'); 
+        const libraryCountEl = document.getElementById('library-count');
         const toastNotification = document.getElementById('toast-notification');
         const toastMessage = document.getElementById('toast-message');
+
+        const chartCanvas = document.getElementById('age-chart');
+        let ageChart = null; // Variable to hold the Chart.js instance
 
         let originalData = [];
         let currentFilteredData = [];
 
         // --- Core Functions ---
-        // Function to show a temporary notification message
         function showNotification(message, duration = 3000) {
             toastMessage.textContent = message;
             toastNotification.classList.remove('hidden', 'fade-out');
@@ -266,15 +284,13 @@
 
             setTimeout(() => {
                 toastNotification.classList.add('hidden');
-            }, duration + 500); // Wait for fade-out animation to complete
+            }, duration + 500);
         }
 
-        // Initializes the dashboard with data from the CSV
         function initializeDashboard(csvText) {
             const headers = ['ลำดับ', 'จำนวน', 'ประเภท', 'ผู้รับผิดชอบ', 'AMS', 'ปีที่จัดซื้อ', 'กลุ่ม/ฝ่าย', 'หมายเหตุ'];
             const rows = csvText.trim().split('\n').slice(1).filter(row => row.trim() !== '');
             
-            // Parse CSV data into an array of objects
             originalData = rows.map(row => {
                 const values = row.split(',');
                 const obj = {};
@@ -291,11 +307,9 @@
                 return;
             }
 
-            // Hide loading message and show dashboard content
             statusMessageDiv.classList.add('hidden');
             dashboardContent.classList.remove('hidden');
 
-            // Clear and populate filter dropdowns
             ownerFilter.innerHTML = '<option value="">ทั้งหมด</option>';
             yearFilter.innerHTML = '<option value="">ทั้งหมด</option>';
             departmentFilter.innerHTML = '<option value="">ทั้งหมด</option>';
@@ -304,7 +318,6 @@
             applyFilters();
         }
         
-        // Shows a status message (e.g., loading or error)
         function showStatusMessage(message, isError = false) {
             statusMessageDiv.classList.remove('hidden');
             statusMessageDiv.querySelector('.loader').style.display = isError ? 'none' : 'block';
@@ -316,7 +329,6 @@
             }
         }
 
-        // Populates the filter dropdowns with unique values from the data
         function populateFilters() {
             const owners = [...new Set(originalData.map(item => item['ผู้รับผิดชอบ']))].sort();
             const years = [...new Set(originalData.map(item => item['ปีที่จัดซื้อ']))].sort((a,b) => b-a);
@@ -327,7 +339,6 @@
             departments.forEach(department => departmentFilter.add(new Option(department, department)));
         }
 
-        // Renders the data table with the provided data
         function renderTable(data) {
             tableBody.innerHTML = '';
             const dataToShow = data.length > 0;
@@ -356,7 +367,6 @@
             }
         }
         
-        // Updates the summary cards with counts from the filtered data
         function updateSummary(data) {
             totalCountEl.textContent = data.length;
             pcCountEl.textContent = data.filter(item => item['ประเภท'] === 'PC').length;
@@ -365,7 +375,58 @@
             libraryCountEl.textContent = data.filter(item => item['หมายเหตุ'].includes('ห้องสมุด')).length;
         }
 
-        // Applies all filters and updates the table and summary
+        // Function to update or create the pie chart
+        function updateChart(data) {
+            const oldAssets = data.filter(item => item.isOld).length;
+            const newAssets = data.length - oldAssets;
+
+            const chartData = {
+                labels: ['อายุเกิน 7 ปี', 'อายุไม่เกิน 7 ปี'],
+                datasets: [{
+                    data: [oldAssets, newAssets],
+                    backgroundColor: ['#dc2626', '#10b981'],
+                    hoverOffset: 4
+                }]
+            };
+
+            const chartConfig = {
+                type: 'pie',
+                data: chartData,
+                options: {
+                    responsive: false, // ปิด responsive เพื่อให้ขนาดคงที่ตามที่กำหนด
+                    maintainAspectRatio: false, // ปิดการรักษาสัดส่วน
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    family: 'Sarabun',
+                                    size: 14
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(tooltipItem) {
+                                    const value = tooltipItem.raw;
+                                    const total = tooltipItem.dataset.data.reduce((sum, current) => sum + current, 0);
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return `${tooltipItem.label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+            
+            if (ageChart) {
+                ageChart.data.datasets[0].data = [oldAssets, newAssets];
+                ageChart.update();
+            } else {
+                ageChart = new Chart(chartCanvas, chartConfig);
+            }
+        }
+
         function applyFilters() {
             const amsQuery = searchAmsInput.value.toLowerCase();
             const selectedOwner = ownerFilter.value;
@@ -385,9 +446,9 @@
             currentFilteredData = filteredData;
             renderTable(filteredData);
             updateSummary(filteredData);
+            updateChart(filteredData);
         }
 
-        // Resets all filters to their default values
         function resetAll() {
             searchAmsInput.value = '';
             ownerFilter.value = '';
@@ -397,7 +458,6 @@
             applyFilters();
         }
         
-        // Exports the currently filtered data to a CSV file
         function exportToCSV() {
             if (currentFilteredData.length === 0) {
                 showNotification("ไม่มีข้อมูลให้ export");
@@ -426,7 +486,7 @@
                 const url = URL.createObjectURL(blob);
                 link.setAttribute('href', url);
                 const today = new Date();
-                const dateString = today.toISOString().split('T')[0]; // YYYY-MM-DD
+                const dateString = today.toISOString().split('T')[0];
                 link.setAttribute('download', `inventory-export-${dateString}.csv`);
                 link.style.visibility = 'hidden';
                 document.body.appendChild(link);
@@ -436,7 +496,6 @@
             }
         }
 
-        // Fetches data from the Google Sheet and initializes the dashboard
         async function loadDataFromSheet() {
             try {
                 const response = await fetch(GOOGLE_SHEET_CSV_URL);
@@ -454,10 +513,8 @@
         }
         
         // --- Event Listeners & Initialization ---
-        // Load data when the page loads
         loadDataFromSheet();
         
-        // Attach event listeners to all filter and button elements
         searchAmsInput.addEventListener('input', applyFilters);
         ownerFilter.addEventListener('change', applyFilters);
         yearFilter.addEventListener('change', applyFilters);
